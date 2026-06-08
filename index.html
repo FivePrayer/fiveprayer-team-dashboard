@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex,nofollow" />
+<title>FivePrayer · Org Dashboard</title>
+<style>
+  :root{
+    --bg:#0c1116; --panel:#141c24; --panel2:#1b2530; --line:#26333f;
+    --txt:#e7eef5; --mut:#93a7b8; --grn:#1db97a; --amb:#f5a623;
+    --red:#ef4d4d; --blu:#4aa3ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--blu)}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#1db97a,#0e8f5e);display:flex;align-items:center;justify-content:center;font-size:20px}
+  h1{font-size:21px;margin:0}
+  .sub{color:var(--mut);font-size:13px}
+  .pill{font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:5px 11px}
+  .ns{display:flex;align-items:center;gap:0;margin:16px 0 4px;flex-wrap:wrap}
+  .ns .step{display:flex;align-items:center;font-size:12px;color:var(--mut)}
+  .ns .dot{width:9px;height:9px;border-radius:50%;background:#33424f;margin-right:6px}
+  .ns .step.now{color:var(--txt);font-weight:700}
+  .ns .step.now .dot{background:var(--grn);box-shadow:0 0 0 3px rgba(29,185,122,.18)}
+  .ns .step.near{color:var(--amb)} .ns .step.near .dot{background:var(--amb)}
+  .ns .arrow{margin:0 10px;color:#3a4654}
+  .banner{margin:16px 0 22px;background:linear-gradient(90deg,rgba(74,163,255,.10),rgba(29,185,122,.06));border:1px solid #243446;border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:1.55}
+  .banner b{color:var(--txt)}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(6,1fr)}
+  @media(max-width:980px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .kpi .label{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .kpi .val{font-size:25px;font-weight:700;margin-top:6px;letter-spacing:-.02em}
+  .kpi .delta{font-size:12px;margin-top:4px;color:var(--mut)}
+  .kpi .delta.up{color:var(--grn)} .kpi .delta.down{color:var(--red)}
+  .cols{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:860px){.cols{grid-template-columns:1fr}}
+  h2{font-size:15px;margin:0 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  h2 .tag{font-size:11px;color:var(--mut);font-weight:400;border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+  .bars{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:10px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bar .b{width:100%;background:linear-gradient(180deg,#1db97a,#0e7a51);border-radius:6px 6px 0 0;min-height:3px;transition:filter .12s}
+  .bar:hover .b{filter:brightness(1.25)}
+  .bar.spike .b{background:linear-gradient(180deg,#f5a623,#d8841a)}
+  .bar .n{font-size:10px;color:var(--mut);margin-top:6px} .bar .v{font-size:10px;color:var(--txt);margin-bottom:5px;white-space:nowrap}
+  .acoh{position:relative;display:flex;align-items:flex-end;gap:12px;height:150px;padding-top:8px}
+  .acoh .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .acoh .ab{width:100%;border-radius:6px 6px 0 0;min-height:4px}
+  .acoh .ab.org{background:linear-gradient(180deg,#1db97a,#0e7a51)} .acoh .ab.vir{background:linear-gradient(180deg,#f5a623,#d8841a)}
+  .acoh .ab.cen{background:repeating-linear-gradient(45deg,#3a4654,#3a4654 5px,#2b3642 5px,#2b3642 10px)}
+  .acoh .col:hover .ab{filter:brightness(1.2)}
+  .acoh .pc{font-size:11px;font-weight:700;margin-bottom:4px} .acoh .nm{font-size:10px;color:var(--mut);margin-top:6px;text-align:center}
+  .baseline{position:absolute;left:0;right:0;border-top:1px dashed #4a5b6b;font-size:9px;color:#6f8194}
+  .bucket{display:flex;gap:16px;align-items:center}
+  .funnelpie{--p:51.8;width:128px;height:128px;border-radius:50%;flex:0 0 auto;background:conic-gradient(var(--grn) calc(var(--p)*1%),#33424f 0);display:flex;align-items:center;justify-content:center}
+  .funnelpie .inner{width:94px;height:94px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .funnelpie .pct{font-size:24px;font-weight:700} .funnelpie .cap{font-size:10px;color:var(--mut)}
+  .leakrows{flex:1}
+  .leakrow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .leakrow:last-child{border-bottom:0}
+  .leakrow .g{color:var(--grn)} .leakrow .r{color:var(--red)} .mut{color:var(--mut)}
+  .stage{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .stage .nm{width:140px;font-size:13px;color:var(--mut)}
+  .stage .track{flex:1;background:var(--panel2);border-radius:6px;height:22px;overflow:hidden}
+  .stage .fill{height:100%;background:linear-gradient(90deg,#4aa3ff,#2d6fd4);border-radius:6px}
+  .stage .vv{width:118px;text-align:right;font-size:12px;color:var(--txt)}
+  .gauge{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+  .gring{--p:0.5;width:74px;height:74px;border-radius:50%;flex:0 0 auto;background:conic-gradient(var(--red) calc(var(--p)*1%),#33424f 0);display:flex;align-items:center;justify-content:center}
+  .gring .gi{width:56px;height:56px;border-radius:50%;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gring .gi b{font-size:16px} .gring .gi span{font-size:9px;color:var(--mut)}
+  .rdist .row{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}
+  .rdist .star{width:26px;color:var(--mut)}
+  .rdist .track{flex:1;background:var(--panel2);height:12px;border-radius:6px;overflow:hidden}
+  .rdist .fill{height:100%;background:var(--grn)} .rdist .fill.low{background:var(--red)}
+  .rdist .cnt{width:64px;text-align:right;color:var(--mut);font-size:12px}
+  .hmwrap{position:relative}
+  .hm{display:grid;grid-template-rows:repeat(7,11px);grid-auto-flow:column;grid-auto-columns:11px;gap:3px}
+  .hm .d{width:11px;height:11px;border-radius:2px;background:#1c2630}
+  .hm .d.l1{background:#0e4d36}.hm .d.l2{background:#13794f}.hm .d.l3{background:#1db97a}.hm .d.l4{background:#5fe0a8}
+  .sample-badge{position:absolute;top:-6px;right:0;font-size:10px;color:var(--amb);border:1px solid #3a2f1e;background:rgba(245,166,35,.1);border-radius:5px;padding:1px 6px}
+  .note{font-size:12px;color:var(--mut);margin-top:10px;line-height:1.5}
+  ul.pri{margin:0;padding-left:18px} ul.pri li{margin:7px 0;font-size:14px}
+  .chip{display:inline-block;font-size:11px;border-radius:5px;padding:1px 6px;margin-right:6px}
+  .c-p0{background:rgba(239,77,77,.16);color:#ff8585} .c-p1{background:rgba(245,166,35,.16);color:var(--amb)}
+  footer{margin-top:30px;color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">🕌</div>
+      <div>
+        <h1>FivePrayer · Org Dashboard</h1>
+        <div class="sub">Snapshot — angka asli per <b>9 Juni 2026</b> (read-only dari Supabase). Versi live nanti auto-refresh.</div>
+      </div>
+    </div>
+    <div class="pill">● data terbaru: prayer log 8 Jun 23:05 UTC</div>
+  </header>
+
+  <div class="ns" title="Tangga milestone menuju 1 miliar user">
+    <div class="step now"><span class="dot"></span>1,88jt sekarang</div>
+    <span class="arrow">→</span><div class="step"><span class="dot"></span>10jt</div>
+    <span class="arrow">→</span><div class="step"><span class="dot"></span>50jt</div>
+    <span class="arrow">→</span><div class="step near"><span class="dot"></span>160jt · lewati Muslim Pro</div>
+    <span class="arrow">→</span><div class="step"><span class="dot"></span>1 MILIAR</div>
+  </div>
+
+  <div class="banner">
+    <b>💡 Dibaca ulang — "1,88jt user" itu BUKA APP, bukan akun.</b> ~52% anonim (asal buka, tanpa daftar).
+    Yang <b>signup beneran aktivasinya SEHAT</b>: Apple <b style="color:var(--grn)">85,4%</b> · Google <b style="color:var(--grn)">62,0%</b> ·
+    anonim cuma <b style="color:var(--amb)">35,3%</b>. Jadi "ember bocor 48%" itu <b>menyesatkan</b> — onboarding nggak rusak buat yang serius;
+    leak besar = pembuka-app yang tak pernah commit. <b>Lever asli:</b> konversi <i>buka app → signup</i> + dorong Google ke level Apple.
+    Yang aktif nempel kuat (81,9% retensi 30h).
+  </div>
+
+  <div class="grid kpis">
+    <div class="card kpi" title="auth.users — total (akun + anonim)"><div class="label">Buka App</div><div class="val">1.877.120</div><div class="delta up">akun riil ~895rb (48%)</div></div>
+    <div class="card kpi" title="user yang pernah log ≥1 sholat / total"><div class="label">Aktivasi</div><div class="val">51,8%</div><div class="delta">anon 35% · G 62% · A 85%</div></div>
+    <div class="card kpi" title="user dgn prayer_log dalam 30 hari"><div class="label">MAU (30h)</div><div class="val">796.016</div><div class="delta">42,4% dari total</div></div>
+    <div class="card kpi" title="prayer_logs dalam 24 jam terakhir"><div class="label">Check-in / 24 jam</div><div class="val">509.669</div><div class="delta">~20,6jt total log</div></div>
+    <div class="card kpi" title="rata-rata Google Play"><div class="label">Rating</div><div class="val">4,82★</div><div class="delta">~94rb review</div></div>
+    <div class="card kpi" title="subscriptions berbayar"><div class="label">User Bayar</div><div class="val" style="color:var(--red)">0</div><div class="delta down">monetisasi belum wired</div></div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>Pertumbuhan <span class="tag">buka app / bulan · users.created_at</span></h2>
+      <div class="bars" id="bars"></div>
+      <div class="note"><b>Skala akar (√)</b> biar bulan kecil kelihatan — Mei sebenarnya ~19× April. Ledakan viral
+        <b style="color:var(--amb)">Mei 2026 = 1,53 juta buka app</b> (82% dari total). <i>Hover bar untuk detail.</i></div>
+    </div>
+    <div class="card">
+      <h2>Ember Bocor — Aktivasi <span class="tag">prayer_logs</span></h2>
+      <div class="bucket">
+        <div class="funnelpie" title="971.906 dari 1.877.120 pernah sholat ≥1×"><div class="inner"><div class="pct">51,8%</div><div class="cap">teraktivasi</div></div></div>
+        <div class="leakrows">
+          <div class="leakrow"><span>Buka app</span><span>1.877.120</span></div>
+          <div class="leakrow"><span class="g">Pernah sholat ≥1×</span><span class="g">971.906</span></div>
+          <div class="leakrow"><span class="r">Bocor (0 sholat)</span><span class="r">905.214</span></div>
+          <div class="leakrow"><span class="mut">Aktif dari yg masuk (30h)</span><span class="g">81,9%</span></div>
+        </div>
+      </div>
+      <div class="note">Leak <b>terkonsentrasi di pembuka-app anonim</b> (35% aktivasi), bukan yang signup. Lihat pecahan di bawah. Target keseluruhan: 52% → 75%.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>Aktivasi per Tipe Login <span class="tag">auth.users · jawaban: "signup = akun atau buka app?"</span></h2>
+    <div class="stage"><div class="nm">Anonim (buka app)</div><div class="track"><div class="fill" style="width:35.3%;background:linear-gradient(90deg,#ef4d4d,#b83838)"></div></div><div class="vv">35,3% · 983rb</div></div>
+    <div class="stage"><div class="nm">Google (signup)</div><div class="track"><div class="fill" style="width:62%"></div></div><div class="vv">62,0% · 597rb</div></div>
+    <div class="stage"><div class="nm">Apple (signup)</div><div class="track"><div class="fill" style="width:85.4%;background:linear-gradient(90deg,#1db97a,#0e8f5e)"></div></div><div class="vv">85,4% · 298rb</div></div>
+    <div class="note"><b>Insight terbesar:</b> "1,88jt user" = buka app, bukan akun. Yang <b>signup aktivasinya sehat</b> (Apple 85%, Google 62%); yang anonim 35%.
+      Leak utama = pembuka-app yang tak pernah commit — <b>bukan onboarding rusak untuk yang serius</b>. Lever: konversi buka→signup, dorong Google ke level Apple.</div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>Aktivasi per Cohort <span class="tag">% pernah sholat, per bulan daftar</span></h2>
+      <div class="acoh" id="acoh"><div class="baseline" style="bottom:118px">baseline organik ~59%</div></div>
+      <div class="note">Organik (Feb–Apr) stabil ~58–61%. <b style="color:var(--amb)">Viral Mei turun ke 52,5%</b> (install iseng).
+        <b>Juni 42% jangan di-overread</b> — user masih baru, banyak belum sempat sholat pertama. <i>Hover untuk angka.</i></div>
+    </div>
+    <div class="card">
+      <h2>Review &amp; Balasan <span class="tag">Google Play</span></h2>
+      <div class="gauge">
+        <div class="gring" title="0 dari ~94rb review dibalas"><div class="gi"><b style="color:var(--red)">0</b><span>dibalas</span></div></div>
+        <div style="font-size:13px;color:var(--mut)">Dari <b style="color:var(--txt)">~94rb</b> review, developer membalas <b style="color:var(--red)">0</b>.
+          Quick win reputasi terbesar — <b style="color:var(--txt)">ReviewReplyAgent</b> (low-star + Arab dulu, approval manusia).</div>
+      </div>
+      <div class="rdist">
+        <div class="row" title="85.304 review"><span class="star">5★</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="cnt">85.304</span></div>
+        <div class="row" title="5.220 review"><span class="star">4★</span><div class="track"><div class="fill" style="width:6.1%"></div></div><span class="cnt">5.220</span></div>
+        <div class="row" title="1.347 review"><span class="star">3★</span><div class="track"><div class="fill" style="width:1.6%"></div></div><span class="cnt">1.347</span></div>
+        <div class="row" title="615 review"><span class="star">2★</span><div class="track"><div class="fill low" style="width:0.7%"></div></div><span class="cnt">615</span></div>
+        <div class="row" title="1.743 review"><span class="star">1★</span><div class="track"><div class="fill low" style="width:2%"></div></div><span class="cnt">1.743</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>Funnel Influencer <span class="tag">snapshot 30 Mei · 812 creator</span></h2>
+      <div class="stage"><div class="nm">Di-enrich</div><div class="track"><div class="fill" style="width:100%"></div></div><div class="vv">812</div></div>
+      <div class="stage"><div class="nm">Di-skor AI</div><div class="track"><div class="fill" style="width:82%"></div></div><div class="vv">665</div></div>
+      <div class="stage"><div class="nm">Emailable</div><div class="track"><div class="fill" style="width:30%"></div></div><div class="vv">241</div></div>
+      <div class="stage"><div class="nm">Shortlist High</div><div class="track"><div class="fill" style="width:10%;background:linear-gradient(90deg,#1db97a,#0e8f5e)"></div></div><div class="vv">83</div></div>
+      <div class="stage"><div class="nm">Angle siap kirim</div><div class="track"><div class="fill" style="width:10%;background:linear-gradient(90deg,#1db97a,#0e8f5e)"></div></div><div class="vv">83</div></div>
+      <div class="note">⚠ 63 email EU/UK dikarantina (GDPR). Pool 241 habis ~2,4 hari @100/hari → butuh DiscoveryAgent. Status live nanti dari Sheet "FivePrayer Influencers".</div>
+    </div>
+    <div class="card">
+      <h2>Reach-out Heatmap <span class="tag">dari ActivityLog</span></h2>
+      <div class="hmwrap"><span class="sample-badge">CONTOH</span><div class="hm" id="hm"></div></div>
+      <div class="note">Ini <b>contoh tampilan</b> — heatmap asli mulai mengisi <b>setelah ActivityLog.gs dipasang</b> (hitung maju, tak bisa backfill).
+        Komponen yang sama dipakai untuk commit GitHub. <i>Hover sel untuk jumlah/hari.</i></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>Yang Harus Dikerjakan Dulu <span class="tag">urutan: reliability → aktivasi → retensi → monetisasi → akuisisi</span></h2>
+    <ul class="pri">
+      <li><span class="chip c-p0">P0</span>Pasang jaring rilis: CI + Crashlytics + kill-switch <code>lock_enabled</code> sebelum rilis tiap 2–3 hari ke 1,88jt user.</li>
+      <li><span class="chip c-p0">P0</span>Instrument funnel: buka app → signup → izin → sholat pertama (PostHog) → tahu persis di mana bocornya.</li>
+      <li><span class="chip c-p0">P0</span>1 paywall RevenueCat (0 user bayar saat ini → semua ekonomi tertahan).</li>
+      <li><span class="chip c-p1">P1</span>Naikkan konversi buka→signup + dorong Google ke level Apple (85%).</li>
+      <li><span class="chip c-p1">P1</span>ReviewReplyAgent (0/94rb) + DiscoveryAgent untuk isi pool 100/hari.</li>
+    </ul>
+  </div>
+
+  <footer>
+    Snapshot statis untuk preview & share cepat. Versi produksi = Next.js + Vercel (read-only) baca live dari Supabase + Google Sheet + GitHub + RevenueCat, dengan login Google (allowlist).
+    Sumber angka: Supabase FivePrayer (read-only, 9 Jun 2026) · laporan review Play · pipeline influencer lokal. Angka agregat, tanpa data pribadi.
+  </footer>
+</div>
+
+<script>
+  var data=[["Des'25",15],["Jan",78],["Feb",1795],["Mar",49550],["Apr",80296],["Mei",1535376],["Jun*",211846]];
+  var max=Math.sqrt(1535376);
+  var fmt=function(n){return n>=1e6?(n/1e6).toFixed(2)+"jt":n>=1e3?Math.round(n/1e3)+"rb":n;};
+  document.getElementById('bars').innerHTML=data.map(function(d){
+    var h=Math.max(3,Math.round(Math.sqrt(d[1])/max*150));
+    var spike=d[1]>1e6?' spike':'';
+    var t=d[0]+': '+d[1].toLocaleString('id')+' buka app';
+    return '<div class="bar'+spike+'" title="'+t+'"><div class="v">'+fmt(d[1])+'</div><div class="b" style="height:'+h+'px"></div><div class="n">'+d[0]+'</div></div>';
+  }).join('');
+  var coh=[["Feb",58.2,1795,1044,"org"],["Mar",60.9,49550,30182,"org"],["Apr",58.5,80296,46994,"org"],
+           ["Mei",52.5,1535376,805667,"vir"],["Jun*",42.0,211846,88898,"cen"]];
+  document.getElementById('acoh').insertAdjacentHTML('beforeend',coh.map(function(c){
+    var h=Math.round(c[1]/65*130);
+    var t=c[0]+': '+c[1]+'% ('+c[3].toLocaleString('id')+' dari '+c[2].toLocaleString('id')+')';
+    return '<div class="col" title="'+t+'"><div class="pc">'+String(c[1]).replace('.',',')+'%</div><div class="ab '+c[4]+'" style="height:'+h+'px"></div><div class="nm">'+c[0]+'</div></div>';
+  }).join(''));
+  var cells=[];
+  for(var i=0;i<371;i++){
+    var recent=i>320,lvl=0,n=0;
+    if(recent){ n=(i*7+i%5*3)%9; lvl=n===0?0:n<3?1:n<5?2:n<7?3:4; }
+    var title=recent?('contoh: '+n+' reach-out'):'';
+    cells.push('<div class="d'+(lvl?' l'+lvl:'')+'"'+(title?' title="'+title+'"':'')+'></div>');
+  }
+  document.getElementById('hm').innerHTML=cells.join('');
+</script>
+</body>
+</html>
