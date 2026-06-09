@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="icon.png" />
 <link rel="apple-touch-icon" href="icon.png" />
 <title>FivePrayer · Org Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
   :root{
     --txt:#f3f7fa; --mut:#a7b6c5; --faint:#7c8ba0;
@@ -22,18 +23,16 @@
   body{margin:0;color:var(--txt);background:#05080c;overflow-x:hidden;
     font:15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Inter","Segoe UI",Roboto,sans-serif}
   .bg{position:fixed;inset:-20% -10% -10% -10%;z-index:-2;background:
-      radial-gradient(45% 40% at 16% 14%,rgba(20,184,166,.36),transparent 60%),
-      radial-gradient(42% 40% at 84% 12%,rgba(96,165,250,.26),transparent 60%),
-      radial-gradient(46% 46% at 80% 90%,rgba(167,139,250,.22),transparent 62%),
-      radial-gradient(40% 40% at 8% 92%,rgba(45,212,191,.16),transparent 60%),
+      radial-gradient(45% 40% at 16% 14%,rgba(20,184,166,.34),transparent 60%),
+      radial-gradient(42% 40% at 84% 12%,rgba(96,165,250,.24),transparent 60%),
+      radial-gradient(46% 46% at 80% 90%,rgba(167,139,250,.20),transparent 62%),
       linear-gradient(160deg,#06100f,#05080c 60%,#04070a)}
-  .orb{position:fixed;z-index:-1;border-radius:50%;filter:blur(72px);opacity:.5;pointer-events:none}
-  .orb.a{width:520px;height:520px;left:-90px;top:-120px;background:radial-gradient(circle,#0fb6a3,transparent 70%);animation:f1 22s ease-in-out infinite alternate}
-  .orb.b{width:460px;height:460px;right:-80px;top:-60px;background:radial-gradient(circle,#3b82f6,transparent 70%);animation:f2 26s ease-in-out infinite alternate}
-  .orb.c{width:600px;height:600px;right:5%;bottom:-220px;background:radial-gradient(circle,#7c3aed,transparent 70%);animation:f1 30s ease-in-out infinite alternate}
+  .orb{position:fixed;z-index:-1;border-radius:50%;filter:blur(72px);opacity:.45;pointer-events:none}
+  .orb.a{width:520px;height:520px;left:-90px;top:-120px;background:radial-gradient(circle,#0fb6a3,transparent 70%);animation:f1 24s ease-in-out infinite alternate}
+  .orb.b{width:460px;height:460px;right:-80px;top:-60px;background:radial-gradient(circle,#3b82f6,transparent 70%);animation:f2 28s ease-in-out infinite alternate}
   @keyframes f1{to{transform:translate(40px,30px)}}@keyframes f2{to{transform:translate(-46px,26px)}}
   @media (prefers-reduced-motion:reduce){.orb{animation:none}}
-  .wrap{max-width:1200px;margin:0 auto;padding:24px 22px 90px}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 22px 90px}
   .glass{background:var(--glass);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
     border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow),var(--hi)}
   svg.ic{flex:0 0 auto;vertical-align:middle}
@@ -60,86 +59,53 @@
   .banner{display:flex;gap:12px;padding:16px 18px;margin-bottom:18px;font-size:13.5px;line-height:1.6;background:linear-gradient(110deg,rgba(45,212,191,.12),rgba(96,165,250,.06))}
   .banner svg{color:var(--teal);margin-top:2px}.banner b{color:var(--txt);font-weight:650}
   .grid{display:grid;gap:16px}.kpis{grid-template-columns:repeat(6,1fr)}
-  @media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
-  .card{padding:18px;transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s,border-color .22s}
-  .card:hover{transform:translateY(-3px);border-color:var(--stroke2);box-shadow:0 18px 46px rgba(0,0,0,.5),var(--hi)}
+  @media(max-width:1040px){.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .card{padding:18px}
+  .kpi{position:relative;overflow:hidden}
   .kpi .label{color:var(--mut);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
-  .kpi .val{font-size:27px;font-weight:680;margin-top:7px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+  .kpi .val{font-size:26px;font-weight:680;margin-top:7px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
   .kpi .delta{font-size:12px;margin-top:7px;color:var(--mut)}.kpi .delta.up{color:var(--teal)}.kpi .delta.down{color:var(--red)}
-  .cols{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:16px}@media(max-width:880px){.cols{grid-template-columns:1fr}}
-  h2{font-size:15.5px;margin:0 0 16px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-weight:620;letter-spacing:-.01em}
+  .cols{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-top:16px}@media(max-width:880px){.cols{grid-template-columns:1fr}}
+  .cols.even{grid-template-columns:1fr 1fr}@media(max-width:880px){.cols.even{grid-template-columns:1fr}}
+  h2{font-size:15.5px;margin:0 0 6px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-weight:620;letter-spacing:-.01em}
   h2 .tag{font-size:11px;color:var(--mut);font-weight:500;border:1px solid var(--stroke);border-radius:7px;padding:3px 8px;background:rgba(255,255,255,.04)}
-  .bars{display:flex;align-items:flex-end;gap:11px;height:176px;padding-top:10px}
-  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
-  .bar .b{width:100%;border-radius:8px 8px 3px 3px;min-height:4px;background:linear-gradient(180deg,#5eead4,#0d9488);box-shadow:0 4px 14px rgba(20,184,166,.30),inset 0 1px 0 rgba(255,255,255,.25);transition:filter .15s}
-  .bar:hover .b{filter:brightness(1.18)}
-  .bar.spike .b{background:linear-gradient(180deg,#fbbf24,#d97706);box-shadow:0 4px 14px rgba(251,191,36,.34),inset 0 1px 0 rgba(255,255,255,.3)}
-  .bar .n{font-size:10.5px;color:var(--mut);margin-top:8px}.bar .v{font-size:10.5px;color:var(--txt);margin-bottom:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
-  .acoh{position:relative;display:flex;align-items:flex-end;gap:14px;height:156px;padding-top:8px}
-  .acoh .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
-  .acoh .ab{width:100%;border-radius:8px 8px 3px 3px;min-height:5px;box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
-  .acoh .ab.org{background:linear-gradient(180deg,#5eead4,#0d9488)}.acoh .ab.vir{background:linear-gradient(180deg,#fbbf24,#d97706)}
-  .acoh .ab.cen{background:repeating-linear-gradient(45deg,rgba(255,255,255,.14),rgba(255,255,255,.14) 6px,rgba(255,255,255,.05) 6px,rgba(255,255,255,.05) 12px)}
-  .acoh .pc{font-size:11.5px;font-weight:680;margin-bottom:5px;font-variant-numeric:tabular-nums}.acoh .nm{font-size:10.5px;color:var(--mut);margin-top:8px}
-  .baseline{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.28);font-size:9px;color:var(--faint)}
-  .bucket{display:flex;gap:18px;align-items:center}
-  .funnelpie{--p:51.8;width:130px;height:130px;border-radius:50%;flex:0 0 auto;background:conic-gradient(from -90deg,var(--teal) calc(var(--p)*1%),rgba(255,255,255,.10) 0);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.35)}
-  .funnelpie .inner{width:96px;height:96px;border-radius:50%;background:rgba(9,13,18,.74);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--hi)}
-  .funnelpie .pct{font-size:24px;font-weight:680}.funnelpie .cap{font-size:10px;color:var(--mut)}
-  .leakrows{flex:1}.leakrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:14px;font-variant-numeric:tabular-nums}
-  .leakrow:last-child{border-bottom:0}.leakrow .g{color:var(--teal)}.leakrow .r{color:var(--red)}.mut{color:var(--mut)}
-  .stage{display:flex;align-items:center;gap:12px;margin:11px 0}
-  .stage .nm{width:152px;font-size:13px;color:var(--mut)}
-  .stage .track{flex:1;background:rgba(255,255,255,.07);border-radius:8px;height:24px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
+  .chart{width:100%;height:300px}.chart.tall{height:340px}.chart.sm{height:230px}
+  .stage{display:flex;align-items:center;gap:12px;margin:10px 0}
+  .stage .nm{width:148px;font-size:13px;color:var(--mut)}
+  .stage .track{flex:1;background:rgba(255,255,255,.07);border-radius:8px;height:22px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
   .stage .fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#60a5fa,#2d6fd4);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
-  .stage .vv{width:132px;text-align:right;font-size:12.5px;color:var(--txt);font-variant-numeric:tabular-nums}
-  .gauge{display:flex;align-items:center;gap:16px;margin-bottom:12px}
-  .gring{--p:0.5;width:78px;height:78px;border-radius:50%;flex:0 0 auto;background:conic-gradient(from -90deg,var(--red) calc(var(--p)*1%),rgba(255,255,255,.10) 0);display:flex;align-items:center;justify-content:center}
-  .gring .gi{width:58px;height:58px;border-radius:50%;background:rgba(9,13,18,.74);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--hi)}
-  .gring .gi b{font-size:17px}.gring .gi span{font-size:9px;color:var(--mut)}
-  .rdist .row{display:flex;align-items:center;gap:9px;margin:6px 0;font-size:13px;font-variant-numeric:tabular-nums}
-  .rdist .star{width:26px;color:var(--mut)}.rdist .track{flex:1;background:rgba(255,255,255,.07);height:13px;border-radius:7px;overflow:hidden}
-  .rdist .fill{height:100%;background:linear-gradient(90deg,#2dd4bf,#0d9488)}.rdist .fill.low{background:linear-gradient(90deg,#fb7185,#e11d48)}
-  .rdist .cnt{width:64px;text-align:right;color:var(--mut);font-size:12px}
-  .hmwrap{position:relative;overflow-x:auto;padding-bottom:4px}
-  .hm{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;grid-auto-columns:13px;gap:3px;min-width:max-content}
-  .hm .d{width:13px;height:13px;border-radius:3px;background:rgba(255,255,255,.06)}
-  .hm .d.l1{background:#0c4f49}.hm .d.l2{background:#108b7e}.hm .d.l3{background:#22c2b0}.hm .d.l4{background:#5eead4}
-  .hmlegend{display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:8px;font-size:11px;color:var(--faint)}
-  .hmlegend i{width:12px;height:12px;border-radius:3px;display:inline-block}
-  .pending{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;background:rgba(7,10,14,.58);backdrop-filter:blur(2px);border-radius:12px;padding:16px}
-  .pending svg{color:var(--teal)}.pending .t{font-weight:650;color:var(--txt)}.pending .s{font-size:12px;color:var(--mut);max-width:380px;line-height:1.55}
-  .note{font-size:12px;color:var(--mut);margin-top:12px;line-height:1.6}
+  .stage .vv{width:128px;text-align:right;font-size:12.5px;color:var(--txt);font-variant-numeric:tabular-nums}
+  .note{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.6}
   ul.pri{margin:0;padding-left:0;list-style:none}ul.pri li{margin:10px 0;font-size:14px;display:flex;gap:10px;align-items:flex-start}
   .chip{flex:0 0 auto;font-size:10.5px;font-weight:700;border-radius:7px;padding:2px 8px;margin-top:1px}
   .c-p0{background:rgba(251,113,133,.18);color:#fda4b4;border:1px solid rgba(251,113,133,.25)}.c-p1{background:rgba(251,191,36,.16);color:var(--amb);border:1px solid rgba(251,191,36,.22)}
   code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:12px}
-  .repos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}@media(max-width:560px){.repos{grid-template-columns:1fr}}
-  .repo{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 13px;background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:12px;font-size:13px}
-  .repo .l{display:flex;align-items:center;gap:9px;color:var(--mut)}.repo .l svg{color:var(--teal)}.repo b{font-variant-numeric:tabular-nums}
+  .pending{position:relative}.pending .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;background:rgba(7,10,14,.5);backdrop-filter:blur(2px);border-radius:12px;padding:16px}
+  .pending .ov svg{color:var(--teal)}.pending .ov .t{font-weight:650}.pending .ov .s{font-size:12px;color:var(--mut);max-width:380px;line-height:1.55}
   footer{margin-top:30px;color:var(--mut);font-size:11.5px;line-height:1.6;padding:16px 18px}
+  .loading{text-align:center;color:var(--mut);padding:60px}
 </style>
 </head>
 <body>
-<div class="bg"></div><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+<div class="bg"></div><div class="orb a"></div><div class="orb b"></div>
 <div class="wrap">
-
   <header class="top glass">
     <div class="brand"><img class="logo" src="icon.png" alt="FivePrayer" />
       <div><h1>FivePrayer · Org Dashboard</h1>
-      <div class="sub">Snapshot — real numbers as of <b>Jun 9, 2026</b> · read-only from Supabase + GitHub</div></div>
+      <div class="sub" id="sub">Loading live data…</div></div>
     </div>
-    <div class="live"><span class="dot"></span>latest data: prayer log Jun 8, 23:05 UTC</div>
+    <div class="live"><span class="dot"></span><span id="updated">—</span></div>
   </header>
 
   <nav class="tabs glass" id="tabs">
     <button data-tab="overview" class="active"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/></svg>Overview</button>
-    <button data-tab="marketing"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l6 4V6L7 10H4z"/><path d="M16 9a3.5 3.5 0 0 1 0 6"/></svg>Marketing · amna</button>
-    <button data-tab="product"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20v-6"/><path d="M12 20V6"/><path d="M18 20v-9"/></svg>Product · Growth</button>
+    <button data-tab="growth"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M21 7v5h-5"/></svg>Growth</button>
+    <button data-tab="product"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20v-6"/><path d="M12 20V6"/><path d="M18 20v-9"/></svg>Product</button>
+    <button data-tab="marketing"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l6 4V6L7 10H4z"/><path d="M16 9a3.5 3.5 0 0 1 0 6"/></svg>Marketing</button>
     <button data-tab="engineering"><svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3"/><path d="M13 15h4"/></svg>Engineering</button>
   </nav>
 
-  <!-- ===== OVERVIEW ===== -->
+  <!-- OVERVIEW -->
   <section class="tabpanel active" id="overview">
     <div class="ns glass">
       <div class="step now"><span class="dot"></span>1.88M today</div>
@@ -152,184 +118,162 @@
       <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>
       <div><b>"1.88M users" = app opens, not accounts.</b> ~52% are anonymous. Users who actually sign up activate <b>healthily</b>:
       Apple <b style="color:var(--teal)">85.4%</b> · Google <b style="color:var(--teal)">62.0%</b> · anonymous <b style="color:var(--amb)">35.3%</b>.
-      The real leak = app-openers who never commit. <b>Lever:</b> convert open→signup + lift Google to Apple's level. (Details in the Product tab.)</div>
+      The real leak = app-openers who never commit. <b>Lever:</b> convert open→signup + lift Google to Apple's level.</div>
     </div>
-    <div class="grid kpis">
-      <div class="card glass kpi"><div class="label">App Opens</div><div class="val">1,877,120</div><div class="delta up">real accounts ~895K</div></div>
-      <div class="card glass kpi"><div class="label">Activation</div><div class="val">51.8%</div><div class="delta">anon 35 · G 62 · A 85</div></div>
-      <div class="card glass kpi"><div class="label">MAU · 30d</div><div class="val">796,016</div><div class="delta">42.4% of total</div></div>
-      <div class="card glass kpi"><div class="label">Check-ins · 24h</div><div class="val">509,669</div><div class="delta">~20.6M total</div></div>
-      <div class="card glass kpi"><div class="label">Rating</div><div class="val">4.82★</div><div class="delta">~94K reviews</div></div>
-      <div class="card glass kpi"><div class="label">Paying Users</div><div class="val" style="color:var(--red)">0</div><div class="delta down">not wired yet</div></div>
-    </div>
-    <div class="card glass" style="margin-top:16px">
-      <h2>What To Fix First <span class="tag">reliability → activation → retention → monetization → acquisition</span></h2>
-      <ul class="pri">
-        <li><span class="chip c-p0">P0</span><span>Release safety net: CI + Crashlytics + a <code>lock_enabled</code> kill-switch before shipping every 2–3 days to 1.88M users.</span></li>
-        <li><span class="chip c-p0">P0</span><span>Instrument the onboarding funnel (PostHog) → learn which Android permission drops users.</span></li>
-        <li><span class="chip c-p0">P0</span><span>Stop making "Skip" (anonymous) the primary button. + ship one RevenueCat paywall.</span></li>
-        <li><span class="chip c-p1">P1</span><span>Start replying to reviews (0/94K) + DiscoveryAgent to keep the 100/day pipeline full.</span></li>
-      </ul>
+    <div class="grid kpis" id="kpis"></div>
+    <div class="card glass" style="margin-top:16px"><h2>Daily Active Users <span class="tag">distinct users with a prayer log / day</span></h2><div class="chart tall" id="c-dau"></div></div>
+    <div class="cols even">
+      <div class="card glass"><h2>Daily Check-ins <span class="tag">prayers logged / day</span></h2><div class="chart" id="c-checkins"></div></div>
+      <div class="card glass"><h2>Prayer Outcomes <span class="tag">last 30 days · 17.2M logs</span></h2><div class="chart" id="c-outcomes"></div></div>
     </div>
   </section>
 
-  <!-- ===== MARKETING ===== -->
-  <section class="tabpanel" id="marketing">
-    <div class="cols">
-      <div class="card glass">
-        <h2>Influencer Funnel <span class="tag">snapshot May 30 · 812 creators</span></h2>
-        <div class="stage"><div class="nm">Enriched</div><div class="track"><div class="fill" style="width:100%"></div></div><div class="vv">812</div></div>
-        <div class="stage"><div class="nm">AI-scored</div><div class="track"><div class="fill" style="width:82%"></div></div><div class="vv">665</div></div>
-        <div class="stage"><div class="nm">Emailable</div><div class="track"><div class="fill" style="width:30%"></div></div><div class="vv">241</div></div>
-        <div class="stage"><div class="nm">High shortlist</div><div class="track"><div class="fill" style="width:12%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div><div class="vv">83</div></div>
-        <div class="stage"><div class="nm">AI angle ready</div><div class="track"><div class="fill" style="width:12%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div><div class="vv">83</div></div>
-        <div class="note">⚠ 63 EU/UK emails quarantined (GDPR). Pool of 241 runs out in ~2.4 days @100/day → needs DiscoveryAgent.</div>
-      </div>
-      <div class="card glass">
-        <h2>Reach-out Status <span class="tag">real · from the "FivePrayer Influencers" Sheet</span></h2>
-        <div class="stage"><div class="nm">Contacted</div><div class="track"><div class="fill" style="width:100%;background:linear-gradient(90deg,#60a5fa,#2d6fd4)"></div></div><div class="vv">774</div></div>
-        <div class="stage"><div class="nm">Replied</div><div class="track"><div class="fill" style="width:5.7%;background:linear-gradient(90deg,#fbbf24,#d97706)"></div></div><div class="vv">44 · 5.7%</div></div>
-        <div class="stage"><div class="nm">Making content</div><div class="track"><div class="fill" style="width:1.3%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div><div class="vv">10</div></div>
-        <div class="stage"><div class="nm">Deal / Taken</div><div class="track"><div class="fill" style="width:0.4%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div><div class="vv">3</div></div>
-        <div class="note">Reply rate <b style="color:var(--amb)">5.7%</b> (44/774). Lever: personalize with the 83 AI angles, automate follow-ups, push replied→content.</div>
-      </div>
-    </div>
-    <div class="card glass" style="margin-top:16px">
-      <h2>Reach-out Heatmap <span class="tag">daily · creators contacted</span></h2>
-      <div class="hmwrap"><div class="hm" id="hm-reach"></div>
-        <div class="pending">
-          <svg class="ic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>
-          <div class="t">Waiting for live data</div>
-          <div class="s">The Sheet currently stores only <b>status</b>, not a <b>contact date</b>, so history can't be backfilled. This heatmap starts filling <b>the moment ActivityLog.gs is installed (1 click in Apps Script)</b> — then it's real per day. See the Engineering tab for a heatmap that's already real (GitHub commits).</div>
-        </div>
-      </div>
+  <!-- GROWTH -->
+  <section class="tabpanel" id="growth">
+    <div class="card glass"><h2>Daily Sign-ups by Provider <span class="tag">users.created_at × auth provider</span></h2><div class="chart tall" id="c-signups"></div>
+      <div class="note">The viral explosion: a handful/day in Feb → <b style="color:var(--amb)">peak ~165K/day around May 8–9</b> → now a healthy ~22K/day. Anonymous (red) tracks Google (blue); Apple (teal) is smaller but activates best.</div></div>
+    <div class="cols even">
+      <div class="card glass"><h2>DAU — Spike &amp; Retention <span class="tag">prayer_logs</span></h2><div class="chart" id="c-dau2"></div>
+        <div class="note">Spiked to <b style="color:var(--teal)">216K (May 26)</b>, then settled at a <b>sustained ~137K</b> — the bucket holds. That sustained line is the real asset.</div></div>
+      <div class="card glass"><h2>Activation by Signup Cohort <span class="tag">% who ever prayed</span></h2><div class="chart" id="c-cohort"></div>
+        <div class="note">Organic ~58–61%; viral May diluted to 52.5%; June not fully aged.</div></div>
     </div>
   </section>
 
-  <!-- ===== PRODUCT ===== -->
+  <!-- PRODUCT -->
   <section class="tabpanel" id="product">
-    <div class="card glass">
-      <h2>Activation by Login Type <span class="tag">auth.users · "is a signup an account or just an app open?"</span></h2>
-      <div class="stage"><div class="nm">Anonymous (app open)</div><div class="track"><div class="fill" style="width:35.3%;background:linear-gradient(90deg,#fb7185,#e11d48)"></div></div><div class="vv">35.3% · 983K</div></div>
-      <div class="stage"><div class="nm">Google (signup)</div><div class="track"><div class="fill" style="width:62%"></div></div><div class="vv">62.0% · 597K</div></div>
-      <div class="stage"><div class="nm">Apple (signup)</div><div class="track"><div class="fill" style="width:85.4%;background:linear-gradient(90deg,#2dd4bf,#0d9488)"></div></div><div class="vv">85.4% · 298K</div></div>
-      <div class="note"><b>Biggest insight:</b> signed-up users activate healthily (Apple 85%, Google 62%); anonymous only 35%. Google&lt;Apple ≈ Android&lt;iOS → likely the Android permission gauntlet (display-over-apps + accessibility + battery). Confirm by instrumenting the funnel.</div>
+    <div class="cols even">
+      <div class="card glass"><h2>Activation by Login Type <span class="tag">the biggest insight</span></h2><div class="chart sm" id="c-acttype"></div>
+        <div class="note">Signed-up users activate well (Apple 85%, Google 62%); anonymous only 35%. Google&lt;Apple ≈ Android&lt;iOS → likely the Android permission gauntlet.</div></div>
+      <div class="card glass"><h2>Leaky Bucket — Activation <span class="tag">prayer_logs</span></h2><div class="chart sm" id="c-leak"></div>
+        <div class="note">971,906 of 1,877,120 ever prayed (51.8%). The leak concentrates in anonymous app-openers. Target 52% → 75%.</div></div>
     </div>
-    <div class="cols">
-      <div class="card glass">
-        <h2>Growth <span class="tag">app opens / month</span></h2>
-        <div class="bars" id="bars"></div>
-        <div class="note"><b>Square-root scale (√)</b> so small months are visible — May is really ~19× April. Viral spike <b style="color:var(--amb)">May = 1.53M</b> (82% of all). <i>Hover bars.</i></div>
-      </div>
-      <div class="card glass">
-        <h2>Leaky Bucket — Activation <span class="tag">prayer_logs</span></h2>
-        <div class="bucket">
-          <div class="funnelpie"><div class="inner"><div class="pct">51.8%</div><div class="cap">activated</div></div></div>
-          <div class="leakrows">
-            <div class="leakrow"><span>App opens</span><span>1,877,120</span></div>
-            <div class="leakrow"><span class="g">Prayed ≥1×</span><span class="g">971,906</span></div>
-            <div class="leakrow"><span class="r">Leaked (0 prayers)</span><span class="r">905,214</span></div>
-            <div class="leakrow"><span class="mut">Still active · 30d</span><span class="g">81.9%</span></div>
-          </div>
-        </div>
-        <div class="note">The leak is in anonymous app-openers (35%), not signups. Overall target: 52% → 75%.</div>
-      </div>
-    </div>
-    <div class="cols">
-      <div class="card glass">
-        <h2>Activation by Cohort <span class="tag">% by signup month</span></h2>
-        <div class="acoh" id="acoh"><div class="baseline" style="bottom:120px">organic baseline ~59%</div></div>
-        <div class="note">Organic ~58–61%. <b style="color:var(--amb)">Viral May 52.5%</b>. June 42% (not fully aged yet — don't over-read). <i>Hover.</i></div>
-      </div>
-      <div class="card glass">
-        <h2>Reviews &amp; Replies <span class="tag">Google Play</span></h2>
-        <div class="gauge"><div class="gring"><div class="gi"><b style="color:var(--red)">0</b><span>replied</span></div></div>
-          <div style="font-size:13px;color:var(--mut)">Of <b style="color:var(--txt)">~94K</b> reviews, the team has replied to <b style="color:var(--red)">0</b>. Biggest cheap reputation win — ReviewReplyAgent.</div></div>
-        <div class="rdist">
-          <div class="row"><span class="star">5★</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="cnt">85,304</span></div>
-          <div class="row"><span class="star">4★</span><div class="track"><div class="fill" style="width:6.1%"></div></div><span class="cnt">5,220</span></div>
-          <div class="row"><span class="star">3★</span><div class="track"><div class="fill" style="width:1.6%"></div></div><span class="cnt">1,347</span></div>
-          <div class="row"><span class="star">2★</span><div class="track"><div class="fill low" style="width:0.7%"></div></div><span class="cnt">615</span></div>
-          <div class="row"><span class="star">1★</span><div class="track"><div class="fill low" style="width:2%"></div></div><span class="cnt">1,743</span></div>
-        </div>
-      </div>
+    <div class="cols even">
+      <div class="card glass"><h2>Prayer Outcomes <span class="tag">on-time vs late vs missed</span></h2><div class="chart sm" id="c-outcomes2"></div>
+        <div class="note">76.8% on-time, 20.8% late, only 2.2% missed — the core loop genuinely changes behavior.</div></div>
+      <div class="card glass"><h2>Reviews &amp; Replies <span class="tag">Google Play · ~94K</span></h2><div class="chart sm" id="c-reviews"></div>
+        <div class="note"><b style="color:var(--red)">0 of ~94K replied.</b> Biggest cheap reputation win — ReviewReplyAgent.</div></div>
     </div>
   </section>
 
-  <!-- ===== ENGINEERING ===== -->
-  <section class="tabpanel" id="engineering">
-    <div class="card glass">
-      <h2>Commit / Push Heatmap <span class="tag">REAL · 4 repos · last 12 months</span></h2>
-      <div class="hmwrap"><div class="hm" id="hm-gh"></div></div>
-      <div class="hmlegend">Less <i style="background:rgba(255,255,255,.06)"></i><i style="background:#0c4f49"></i><i style="background:#108b7e"></i><i style="background:#22c2b0"></i><i style="background:#5eead4"></i> More</div>
-      <div class="note"><b>195 commits</b> across 70 active days (Nov 2025–Jun 2026). Spike on <b style="color:var(--teal)">May 20 = 37 commits</b> (big push during the viral wave). <i>Hover a cell for the date &amp; count.</i></div>
+  <!-- MARKETING -->
+  <section class="tabpanel" id="marketing">
+    <div class="cols even">
+      <div class="card glass"><h2>Influencer Funnel <span class="tag">snapshot · 812 creators</span></h2><div class="chart sm" id="c-funnel"></div>
+        <div class="note">⚠ 63 EU/UK emails quarantined (GDPR). Pool of 241 lasts ~2.4 days @100/day → needs DiscoveryAgent.</div></div>
+      <div class="card glass"><h2>Reach-out Status <span class="tag">real · from the Sheet</span></h2><div class="chart sm" id="c-reach"></div>
+        <div class="note">Reply rate <b style="color:var(--amb)">5.7%</b> (44/774). Lever: personalize with 83 AI angles, automate follow-ups.</div></div>
     </div>
-    <div class="cols">
-      <div class="card glass">
-        <h2>Per Repo <span class="tag">commits on main</span></h2>
-        <div class="repos">
-          <div class="repo"><span class="l"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg>fiveprayer-mobile</span><b>88</b></div>
-          <div class="repo"><span class="l"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>fiveprayer-website</span><b>87</b></div>
-          <div class="repo"><span class="l"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>fiveprayer-backend</span><b>18</b></div>
-          <div class="repo"><span class="l"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20v-6"/><path d="M12 20V6"/><path d="M18 20v-9"/></svg>fiveprayer-dashboard</span><b>2</b></div>
-        </div>
-        <div class="note">Mobile ships <b>almost daily</b>. AI branches: <code>claude/imp-N-*</code> — improvement agents already running.</div>
-      </div>
-      <div class="card glass">
-        <h2>Substrate Status <span class="tag">prerequisites for safe shipping</span></h2>
+    <div class="card glass" style="margin-top:16px"><h2>Reach-out Heatmap <span class="tag">daily · creators contacted</span></h2>
+      <div class="pending"><div class="chart sm" id="c-reachhm"></div>
+        <div class="ov"><svg class="ic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>
+        <div class="t">Waiting for live data</div>
+        <div class="s">The Sheet stores only <b>status</b>, not a contact date — history can't be backfilled. This fills the moment <b>ActivityLog.gs is installed (1 click)</b>. The Engineering tab shows a heatmap that's already real.</div></div></div>
+    </div>
+  </section>
+
+  <!-- ENGINEERING -->
+  <section class="tabpanel" id="engineering">
+    <div class="card glass"><h2>Commit Activity <span class="tag">REAL · 4 repos · last 12 months</span></h2><div class="chart sm" id="c-ghcal"></div>
+      <div class="note"><b>195 commits</b> across 70 active days. Spike <b style="color:var(--teal)">May 20 = 37 commits</b>. Mobile ships almost daily; AI branches <code>claude/imp-N-*</code> already running.</div></div>
+    <div class="cols even">
+      <div class="card glass"><h2>Commits per Repo <span class="tag">main</span></h2><div class="chart sm" id="c-repos"></div></div>
+      <div class="card glass"><h2>Substrate Status <span class="tag">prerequisites for safe shipping</span></h2>
         <ul class="pri">
           <li><span class="chip c-p0">P0</span><span><b>No CI</b> — add GitHub Actions (analyze + test).</span></li>
-          <li><span class="chip c-p0">P0</span><span><b>No Crashlytics</b> — crash-rate is unmeasurable.</span></li>
-          <li><span class="chip c-p0">P0</span><span><b>PostHog: 0 events</b> — onboarding funnel is unmeasurable.</span></li>
+          <li><span class="chip c-p0">P0</span><span><b>No Crashlytics</b> — crash-rate unmeasurable.</span></li>
+          <li><span class="chip c-p0">P0</span><span><b>PostHog: 0 events</b> — onboarding funnel unmeasurable.</span></li>
           <li><span class="chip c-p1">P1</span><span><code>lock_enabled</code> kill-switch + staged rollout.</span></li>
         </ul>
-        <div class="note">Full PR-ready spec in <code>fiveprayer-dashboard/substrate/MOBILE_SUBSTRATE.md</code>.</div>
-      </div>
+        <div class="note">Full PR-ready spec in <code>fiveprayer-dashboard/substrate/MOBILE_SUBSTRATE.md</code>.</div></div>
     </div>
   </section>
 
-  <footer class="glass">
-    Static snapshot for fast sharing. Production version = Next.js + Vercel reading live from Supabase + Sheet + GitHub + RevenueCat, with Google sign-in (allowlist).
-    Sources: Supabase FivePrayer · GitHub (real commits) · Play review report · local influencer pipeline. Aggregate numbers only, no personal data.
-  </footer>
+  <footer class="glass" id="foot">Live-updating dashboard — reads <code>data.json</code>, refreshed on a schedule from Supabase + GitHub. Production target: Next.js + Vercel with Google sign-in. Aggregate numbers only, no personal data.</footer>
 </div>
 
 <script>
-  document.getElementById('tabs').addEventListener('click',function(e){
-    var b=e.target.closest('button'); if(!b)return;
-    document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('active',x===b)});
-    var id=b.getAttribute('data-tab');
-    document.querySelectorAll('.tabpanel').forEach(function(p){p.classList.toggle('active',p.id===id)});
-    window.scrollTo(0,0);
-  });
-  function heatmap(elId, map, lv){
-    var el=document.getElementById(elId); if(!el)return;
-    var END=new Date('2026-06-09T00:00:00');
-    var last=new Date(END); last.setDate(last.getDate()+(6-END.getDay()));
-    var start=new Date(last); start.setDate(start.getDate()-7*53+1);
-    var html='', d=new Date(start);
-    while(d<=last){
-      var iso=d.toISOString().slice(0,10), c=map[iso]||0, l=c===0?0:lv(c);
-      html+='<div class="d'+(l?' l'+l:'')+'" title="'+(c>0?iso+': '+c:iso)+'"></div>';
-      d.setDate(d.getDate()+1);
-    }
-    el.innerHTML=html;
-  }
-  var GH={"2025-11-13":1,"2025-11-14":5,"2025-11-17":2,"2025-11-19":1,"2025-11-28":1,"2025-12-07":1,"2025-12-17":1,"2025-12-19":1,"2025-12-24":1,"2025-12-26":1,"2026-01-09":1,"2026-01-10":1,"2026-01-13":1,"2026-01-14":2,"2026-01-15":1,"2026-01-20":2,"2026-01-22":1,"2026-01-26":3,"2026-01-28":5,"2026-02-02":4,"2026-02-03":1,"2026-02-04":1,"2026-02-08":1,"2026-02-10":1,"2026-02-12":1,"2026-02-13":1,"2026-02-16":2,"2026-02-19":8,"2026-02-22":1,"2026-02-26":1,"2026-02-28":3,"2026-03-07":9,"2026-03-08":1,"2026-03-16":1,"2026-03-17":1,"2026-03-27":1,"2026-03-28":4,"2026-04-02":4,"2026-04-03":1,"2026-04-05":1,"2026-04-06":1,"2026-04-08":3,"2026-04-10":3,"2026-04-12":2,"2026-04-13":1,"2026-04-21":4,"2026-04-22":2,"2026-04-25":1,"2026-04-27":1,"2026-04-28":1,"2026-05-06":3,"2026-05-10":2,"2026-05-12":2,"2026-05-15":1,"2026-05-18":4,"2026-05-19":9,"2026-05-20":37,"2026-05-22":1,"2026-05-23":5,"2026-05-24":2,"2026-05-25":4,"2026-05-30":1,"2026-05-31":3,"2026-06-01":7,"2026-06-02":2,"2026-06-04":1,"2026-06-06":4,"2026-06-07":3,"2026-06-08":4,"2026-06-09":1};
-  heatmap('hm-gh', GH, function(c){return c<3?1:c<6?2:c<12?3:4;});
-  heatmap('hm-reach', {}, function(){return 1;});
+const TEAL='#2dd4bf', AMB='#fbbf24', RED='#fb7185', BLU='#60a5fa', MUT='#a7b6c5', GRID='rgba(255,255,255,.06)';
+const charts=[];
+function mk(id){var el=document.getElementById(id); if(!el)return null; var c=echarts.init(el,null,{renderer:'canvas'}); charts.push(c); return c;}
+function fmt(n){return n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(n>=1e4?0:1)+'K':n;}
+function grad(hex,a1,a2){return new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:hex+a1},{offset:1,color:hex+a2}]);}
+var AX={axisLine:{lineStyle:{color:GRID}},axisLabel:{color:MUT,fontSize:11},axisTick:{show:false},splitLine:{lineStyle:{color:GRID}}};
+var TT={trigger:'axis',backgroundColor:'rgba(10,16,22,.92)',borderColor:'rgba(255,255,255,.12)',textStyle:{color:'#eaf1f7',fontSize:12},axisPointer:{lineStyle:{color:'rgba(255,255,255,.2)'}}};
 
-  var data=[["Dec'25",15],["Jan",78],["Feb",1795],["Mar",49550],["Apr",80296],["May",1535376],["Jun*",211846]];
-  var max=Math.sqrt(1535376), fmt=function(n){return n>=1e6?(n/1e6).toFixed(2)+"M":n>=1e3?Math.round(n/1e3)+"K":n;};
-  document.getElementById('bars').innerHTML=data.map(function(d){
-    var h=Math.max(4,Math.round(Math.sqrt(d[1])/max*154)), spike=d[1]>1e6?' spike':'';
-    return '<div class="bar'+spike+'" title="'+d[0]+': '+d[1].toLocaleString('en-US')+' app opens"><div class="v">'+fmt(d[1])+'</div><div class="b" style="height:'+h+'px"></div><div class="n">'+d[0]+'</div></div>';
-  }).join('');
-  var coh=[["Feb",58.2,"org"],["Mar",60.9,"org"],["Apr",58.5,"org"],["May",52.5,"vir"],["Jun*",42.0,"cen"]];
-  document.getElementById('acoh').insertAdjacentHTML('beforeend',coh.map(function(c){
-    var h=Math.round(c[1]/65*132);
-    return '<div class="col" title="'+c[0]+': '+c[1]+'%"><div class="pc">'+c[1]+'%</div><div class="ab '+c[2]+'" style="height:'+h+'px"></div><div class="nm">'+c[0]+'</div></div>';
-  }).join(''));
+function lineArea(id,dates,series){var c=mk(id); if(!c)return;
+  c.setOption({grid:{left:48,right:18,top:18,bottom:28},tooltip:TT,legend:series.length>1?{top:0,right:0,textStyle:{color:MUT},itemWidth:10,itemHeight:10}:undefined,
+    xAxis:Object.assign({type:'category',data:dates,boundaryGap:false},AX,{axisLabel:{color:MUT,fontSize:10,interval:Math.ceil(dates.length/8)}}),
+    yAxis:Object.assign({type:'value'},AX,{axisLabel:{color:MUT,fontSize:11,formatter:fmt}}),
+    series:series.map(function(s){return {name:s.name,type:'line',stack:s.stack,smooth:true,showSymbol:false,lineStyle:{width:s.stack?0:2.4,color:s.color},
+      areaStyle:{color:grad(s.color,s.stack?'cc':'55',s.stack?'66':'02')},itemStyle:{color:s.color},data:s.data,markPoint:s.mark};})});}
+
+function bar(id,cats,vals,colors,horiz){var c=mk(id); if(!c)return;
+  var base={grid:{left:horiz?120:40,right:24,top:14,bottom:28},tooltip:Object.assign({},TT,{trigger:'item'})};
+  var catAx=Object.assign({type:'category',data:cats},AX,{axisLabel:{color:MUT,fontSize:12}});
+  var valAx=Object.assign({type:'value'},AX,{axisLabel:{color:MUT,fontSize:11,formatter:fmt}});
+  base[horiz?'yAxis':'xAxis']=horiz?Object.assign(catAx,{inverse:true}):catAx; base[horiz?'xAxis':'yAxis']=valAx;
+  base.series=[{type:'bar',data:vals.map(function(v,i){return {value:v,itemStyle:{color:colors?colors[i]:TEAL,borderRadius:horiz?[0,6,6,0]:[6,6,0,0]}};}),barWidth:'58%',
+    label:{show:true,position:horiz?'right':'top',color:'#dfeaf2',fontSize:11,formatter:function(p){return fmt(p.value);}}}];
+  c.setOption(base);}
+
+function donut(id,data){var c=mk(id); if(!c)return;
+  c.setOption({tooltip:Object.assign({},TT,{trigger:'item',formatter:'{b}: {c} ({d}%)'}),legend:{bottom:0,textStyle:{color:MUT},itemWidth:9,itemHeight:9},
+    series:[{type:'pie',radius:['52%','78%'],center:['50%','45%'],avoidLabelOverlap:true,itemStyle:{borderColor:'#0a1016',borderWidth:2},
+      label:{show:false},data:data}]});}
+
+function calendar(id,daily){var c=mk(id); if(!c)return; var data=Object.keys(daily).map(function(k){return [k,daily[k]];});
+  var max=Math.max.apply(null,data.map(function(d){return d[1];}));
+  c.setOption({tooltip:Object.assign({},TT,{trigger:'item',formatter:function(p){return p.value[0]+': '+p.value[1]+' commits';}}),
+    visualMap:{min:0,max:max,show:false,inRange:{color:['rgba(255,255,255,.06)','#0c4f49','#108b7e','#22c2b0','#5eead4']}},
+    calendar:{top:20,left:30,right:10,bottom:0,cellSize:['auto',13],range:['2025-06-15','2026-06-09'],
+      itemStyle:{color:'transparent',borderColor:'rgba(255,255,255,.04)',borderWidth:2},splitLine:{show:false},
+      yearLabel:{show:false},monthLabel:{color:MUT,fontSize:10},dayLabel:{color:MUT,fontSize:9,firstDay:0}},
+    series:[{type:'heatmap',coordinateSystem:'calendar',data:data}]});}
+
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(function(x){x.classList.toggle('active',x===b)});
+  var id=b.getAttribute('data-tab');
+  document.querySelectorAll('.tabpanel').forEach(function(p){p.classList.toggle('active',p.id===id)});
+  window.scrollTo(0,0); setTimeout(function(){charts.forEach(function(c){c.resize();});},60);});
+window.addEventListener('resize',function(){charts.forEach(function(c){c.resize();});});
+
+fetch('data.json?'+Date.now()).then(function(r){return r.json();}).then(function(D){
+  var gen=new Date(D.generatedAt); document.getElementById('updated').textContent='updated '+gen.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+gen.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})+' · auto-refresh';
+  document.getElementById('sub').innerHTML='Live from Supabase + GitHub · '+D.dau.length+' days of activity tracked';
+  var k=D.kpis;
+  var kpi=[['App Opens',k.appOpens.toLocaleString('en-US'),'real accounts ~'+fmt(k.accounts),'up'],
+    ['Activation',k.activationPct+'%','anon 35 · G 62 · A 85',''],
+    ['MAU · 30d',k.mau30.toLocaleString('en-US'),(((k.mau30/k.appOpens)*100).toFixed(1))+'% of opens',''],
+    ['DAU · latest',k.dauLatest.toLocaleString('en-US'),'sustained after the spike','up'],
+    ['Rating',k.rating+'★','~'+fmt(k.reviews)+' reviews',''],
+    ['Paying Users',k.paying,'not wired yet','down']];
+  document.getElementById('kpis').innerHTML=kpi.map(function(x){return '<div class="card glass kpi"><div class="label">'+x[0]+'</div><div class="val"'+(x[0]=='Paying Users'?' style="color:var(--red)"':'')+'>'+x[1]+'</div><div class="delta '+x[3]+'">'+x[2]+'</div></div>';}).join('');
+
+  var dates=D.dau.map(function(r){return r[0];});
+  lineArea('c-dau',dates,[{name:'DAU',color:TEAL,data:D.dau.map(function(r){return r[1];}),
+    mark:{data:[{type:'max',name:'peak',label:{color:'#04201d',fontSize:11,fontWeight:700,formatter:function(p){return fmt(p.value);}},itemStyle:{color:AMB}}],symbolSize:46}}]);
+  lineArea('c-dau2',dates,[{name:'DAU',color:TEAL,data:D.dau.map(function(r){return r[1];})}]);
+  lineArea('c-checkins',dates,[{name:'Check-ins',color:BLU,data:D.dau.map(function(r){return r[2];})}]);
+  var sd=D.signups.map(function(r){return r[0];});
+  lineArea('c-signups',sd,[
+    {name:'Anonymous',stack:'s',color:RED,data:D.signups.map(function(r){return r[1];})},
+    {name:'Google',stack:'s',color:BLU,data:D.signups.map(function(r){return r[2];})},
+    {name:'Apple',stack:'s',color:TEAL,data:D.signups.map(function(r){return r[3];})}]);
+  bar('c-cohort',D.cohort.map(function(r){return r[0];}),D.cohort.map(function(r){return r[1];}),
+    D.cohort.map(function(r){return r[0]=='May'?AMB:r[0][0]=='J'&&r[0].length>3?'#64748b':TEAL;}));
+  bar('c-acttype',D.activationByType.map(function(r){return r[0];}),D.activationByType.map(function(r){return r[1];}),[RED,BLU,TEAL]);
+  donut('c-leak',[{name:'Prayed ≥1×',value:k.prayedEver,itemStyle:{color:TEAL}},{name:'Leaked (0 prayers)',value:k.leaked,itemStyle:{color:'rgba(251,113,133,.55)'}}]);
+  donut('c-outcomes',D.outcomes.map(function(o,i){return {name:o[0],value:o[1],itemStyle:{color:[TEAL,AMB,RED,'#64748b'][i]}};}));
+  donut('c-outcomes2',D.outcomes.map(function(o,i){return {name:o[0],value:o[1],itemStyle:{color:[TEAL,AMB,RED,'#64748b'][i]}};}));
+  bar('c-reviews',D.reviews.map(function(r){return r[0];}),D.reviews.map(function(r){return r[1];}),[TEAL,TEAL,'#94a3b8',RED,RED]);
+  bar('c-funnel',D.funnel.map(function(r){return r[0];}),D.funnel.map(function(r){return r[1];}),null,true);
+  bar('c-reach',D.reachout.map(function(r){return r[0];}),D.reachout.map(function(r){return r[1];}),[BLU,AMB,TEAL,TEAL],true);
+  bar('c-repos',D.github.perRepo.map(function(r){return r[0];}),D.github.perRepo.map(function(r){return r[1];}),null,true);
+  calendar('c-ghcal',D.github.daily);
+  calendar('c-reachhm',{});
+  setTimeout(function(){charts.forEach(function(c){c.resize();});},80);
+}).catch(function(e){document.getElementById('sub').textContent='Failed to load data.json — '+e;});
 </script>
 </body>
 </html>

@@ -1,0 +1,30 @@
+name: refresh-data
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch: {}      # allow manual run from the Actions tab
+permissions:
+  contents: write
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm init -y >/dev/null 2>&1 && npm i pg@8 >/dev/null 2>&1
+      - name: Regenerate data.json
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: node scripts/refresh.mjs
+      - name: Commit if changed
+        run: |
+          git config user.name "fiveprayer-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data.json
+          git diff --cached --quiet || git commit -m "chore: refresh data.json [skip ci]"
+          git push
