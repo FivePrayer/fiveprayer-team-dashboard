@@ -128,6 +128,21 @@ try {
   console.log('stores:', stores.ios?.rating, '/', stores.play?.ratingLast7d);
 } catch (e) { console.log('stores ERROR (kept previous):', e.message); }
 
+// ---- live reach-out activity from the Sheet's ActivityLog Web App (server-side; no CORS) ----
+try {
+  const alUrl = data.activityLogUrl || prev.activityLogUrl;
+  if (alUrl) {
+    const j = JSON.parse(await (await fetch(alUrl, { redirect: 'follow' })).text()); // throws if login-gated (HTML)
+    if (j && j.byDay) {
+      const hist = (data.reachoutHistory && data.reachoutHistory.byDay) || {};
+      const merged = { ...hist };
+      for (const k in j.byDay) merged[k] = Math.max(merged[k] || 0, j.byDay[k]);
+      data.reachoutHistory = { ...data.reachoutHistory, byDay: merged, liveUpdatedAt: j.generatedAt, source: 'Sheet version history + live ActivityLog' };
+      console.log('reachout live merged:', Object.keys(j.byDay).length, 'days');
+    }
+  }
+} catch (e) { console.log('activitylog fetch skipped:', e.message); }
+
 // ---- Android Vitals (crash + ANR) via Play Reporting API ----
 try {
   const b64u = (s) => Buffer.from(s).toString('base64url');

@@ -303,7 +303,7 @@ fetch('data.json?'+Date.now()).then(function(r){return r.json();}).then(function
   var reach=(D.reachoutHistory&&D.reachoutHistory.byDay)?Object.assign({},D.reachoutHistory.byDay):{};
   calendar('c-reachhm',reach);
   if(D.activityLogUrl){fetch(D.activityLogUrl).then(function(r){return r.json();}).then(function(j){
-    var merged=Object.assign({},reach),lb=j.byDay||{}; for(var kk in lb)merged[kk]=(merged[kk]||0)+lb[kk];
+    var merged=Object.assign({},reach),lb=j.byDay||{}; for(var kk in lb)merged[kk]=Math.max(merged[kk]||0,lb[kk]);
     calendar('c-reachhm',merged); charts.forEach(function(c){c.resize();});
   }).catch(function(){});}
 
