@@ -2,7 +2,8 @@
 // Requires secret SUPABASE_DB_URL (read-only Postgres connection string from Supabase → Settings → Database).
 // Optional secret GH_PAT (fine-grained PAT with read access to the 4 repos) to also refresh the commit heatmap.
 import pg from 'pg';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import crypto from 'crypto';
 
 const prev = JSON.parse(readFileSync('data.json', 'utf8')); // preserve sections we can't refresh
 const db = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
@@ -80,6 +81,41 @@ if (PAT) {
   }
   data.github = { daily, perRepo, total: Object.values(daily).reduce((a, b) => a + b, 0), activeDays: Object.keys(daily).length };
 }
+
+// ---- Stores: App Store Connect + Google Play (uses env secrets in CI, .secrets/ locally) ----
+try {
+  const b64url = (s) => Buffer.from(s).toString('base64url');
+  const p8 = process.env.APPSTORE_P8 || (existsSync('.secrets/AppStoreConnect_AuthKey_2GHDN4JLDT.p8') ? readFileSync('.secrets/AppStoreConnect_AuthKey_2GHDN4JLDT.p8', 'utf8') : null);
+  const saRaw = process.env.PLAY_SA_JSON || (existsSync('.secrets/play-service-account.json') ? readFileSync('.secrets/play-service-account.json', 'utf8') : null);
+  const stores = {};
+  if (p8) {
+    const now = Math.floor(Date.now() / 1000);
+    const h = b64url(JSON.stringify({ alg: 'ES256', kid: process.env.APPSTORE_KEY_ID || '2GHDN4JLDT', typ: 'JWT' }));
+    const pl = b64url(JSON.stringify({ iss: process.env.APPSTORE_ISSUER_ID || '0c7e62df-b701-4b2b-9717-7b3c2b3590e6', iat: now, exp: now + 1100, aud: 'appstoreconnect-v1' }));
+    const jwt = h + '.' + pl + '.' + crypto.sign('SHA256', Buffer.from(h + '.' + pl), { key: p8, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+    let url = 'https://api.appstoreconnect.apple.com/v1/apps/6755536905/customerReviews?limit=200&sort=-createdDate';
+    const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0, sum = 0, pg2 = 0; const recent = [];
+    while (url && pg2 < 8) {
+      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + jwt } }); if (!r.ok) break; const j = await r.json();
+      for (const rv of (j.data || [])) { const s = rv.attributes?.rating; if (s) { dist[s]++; total++; sum += s; } if (recent.length < 6) recent.push({ rating: s, title: rv.attributes?.title, body: (rv.attributes?.body || '').slice(0, 120), territory: rv.attributes?.territory }); }
+      url = j.links?.next; pg2++;
+    }
+    stores.ios = { rating: total ? +(sum / total).toFixed(2) : null, reviews: total, dist, recent };
+  }
+  if (saRaw) {
+    const sa = JSON.parse(saRaw); const now = Math.floor(Date.now() / 1000);
+    const h = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+    const pl = b64url(JSON.stringify({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/androidpublisher', aud: sa.token_uri, iat: now, exp: now + 3600 }));
+    const assertion = h + '.' + pl + '.' + crypto.sign('RSA-SHA256', Buffer.from(h + '.' + pl), sa.private_key).toString('base64url');
+    const tok = (await (await fetch(sa.token_uri, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }) })).json()).access_token;
+    const revs = (await (await fetch('https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.fiveprayer.app/reviews?maxResults=100', { headers: { Authorization: 'Bearer ' + tok } })).json()).reviews || [];
+    const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let sum = 0, n = 0; const recent = [];
+    for (const rv of revs) { const c = rv.comments?.[0]?.userComment; const s = c?.starRating; if (s) { dist[s]++; sum += s; n++; } if (recent.length < 6) recent.push({ rating: s, text: (c?.text || '').slice(0, 120), device: c?.deviceMetadata?.productName, author: rv.authorName }); }
+    stores.play = { ratingAllTime: prev.stores?.play?.ratingAllTime || 4.82, reviewsAllTime: prev.stores?.play?.reviewsAllTime || 94261, ratingLast7d: n ? +(sum / n).toFixed(2) : null, distLast7d: dist, recent };
+  }
+  if (stores.ios || stores.play) data.stores = { ...prev.stores, ...stores, pulledAt: new Date().toISOString() };
+  console.log('stores:', stores.ios?.rating, '/', stores.play?.ratingLast7d);
+} catch (e) { console.log('stores ERROR (kept previous):', e.message); }
 
 writeFileSync('data.json', JSON.stringify(data));
 console.log('refreshed data.json — DAU days', data.dau.length, 'signup days', data.signups.length, 'app opens', data.kpis.appOpens);

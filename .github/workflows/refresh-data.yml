@@ -20,6 +20,10 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           GH_PAT: ${{ secrets.GH_PAT }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          PLAY_SA_JSON: ${{ secrets.PLAY_SA_JSON }}
         run: node scripts/refresh.mjs
       - name: Commit if changed
         run: |
