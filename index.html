@@ -194,12 +194,9 @@
       <div class="card pad"><h2>Reach-out Status <span class="tag">real · from the Sheet</span></h2><div class="chart sm" id="c-reach"></div>
         <div class="note">Reply rate <b>5.7%</b> (44/774). Lever: personalize with the 83 AI angles, automate follow-ups.</div></div>
     </div>
-    <div class="card pad" style="margin-top:14px"><h2>Reach-out Heatmap <span class="tag">daily · creators contacted</span></h2>
-      <div class="pending"><div class="chart sm" id="c-reachhm"></div>
-        <div class="ov"><svg class="ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>
-        <div class="t">Waiting for live data</div>
-        <div class="s">The Sheet stores only status, not a contact date — history can't be backfilled. This fills the moment ActivityLog.gs is installed (1 click). The Engineering tab shows a heatmap that's already real.</div></div></div>
-    </div>
+    <div class="card pad" style="margin-top:14px"><h2>Reach-out Heatmap <span class="tag">team edit-activity · Sheet version history + live</span></h2>
+      <div class="chart sm" id="c-reachhm"></div>
+      <div class="note">Real history reconstructed from the Sheet's version history (Mar 15 → today): each cell = team edit-sessions that day (Amna's CRM/reach-out work). Busiest day <b>Jun 8 (12 sessions)</b>. From now on it updates <b>live</b> via ActivityLog whenever the Sheet changes.</div></div>
   </section>
 
   <!-- ENGINEERING -->
@@ -302,11 +299,12 @@ fetch('data.json?'+Date.now()).then(function(r){return r.json();}).then(function
   bar('c-funnel',D.funnel.map(function(r){return r[0];}),D.funnel.map(function(r){return r[1];}),null,true);
   bar('c-reach',D.reachout.map(function(r){return r[0];}),D.reachout.map(function(r){return r[1];}),[BLUE,AMBER,TEAL,TEAL],true);
   bar('c-repos',D.github.perRepo.map(function(r){return r[0];}),D.github.perRepo.map(function(r){return r[1];}),null,true);
-  calendar('c-ghcal',D.github.daily); calendar('c-reachhm',{});
+  calendar('c-ghcal',D.github.daily);
+  var reach=(D.reachoutHistory&&D.reachoutHistory.byDay)?Object.assign({},D.reachoutHistory.byDay):{};
+  calendar('c-reachhm',reach);
   if(D.activityLogUrl){fetch(D.activityLogUrl).then(function(r){return r.json();}).then(function(j){
-    calendar('c-reachhm', j.byDay||{});
-    var ov=document.querySelector('#marketing .pending .ov'); if(ov)ov.style.display='none';
-    charts.forEach(function(c){c.resize();});
+    var merged=Object.assign({},reach),lb=j.byDay||{}; for(var kk in lb)merged[kk]=(merged[kk]||0)+lb[kk];
+    calendar('c-reachhm',merged); charts.forEach(function(c){c.resize();});
   }).catch(function(){});}
 
   if(D.stores){var S=D.stores;
