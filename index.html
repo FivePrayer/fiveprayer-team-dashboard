@@ -138,6 +138,14 @@
       <div class="card pad"><h2>Activation by Signup Cohort <span class="tag">% who ever prayed</span></h2><div class="chart" id="c-cohort"></div>
         <div class="note">Organic ~58–61%; viral May diluted to 52.5%; June not fully aged.</div></div>
     </div>
+    <div class="cols even">
+      <div class="card pad"><h2>Retention by Cohort <span class="tag">D1 / D7 / D30 · % who prayed</span></h2><div class="chart" id="c-retention"></div>
+        <div class="note">Softening as we scale: D1 36.5%→26.3%, D7 18.5%→11.2%; mature D30 floor ~7–10%. ~1.8M weekly signups ≈ only ~150–190K still praying at D30 — the leaky bucket, not acquisition, is the gate to 1B.</div></div>
+      <div class="card pad"><h2>Stickiness <span class="tag">DAU / MAU</span></h2><div class="chart" id="c-stickiness"></div>
+        <div class="note">Now <b>0.17</b> (137K / 794K) — below the 0.20 "daily-habit" bar, down from 0.45 at the May peak.</div></div>
+    </div>
+    <div class="card pad" style="margin-top:14px"><h2>Audience by Country <span class="tag">geocoded · localization &amp; ASO priority</span></h2><div class="chart sm" id="c-geo"></div>
+      <div class="note"><b>Arabic-first is the lever:</b> 9 of the top 12 are Arabic-speaking (Saudi 23%, Egypt 11%, Algeria, Iraq, Libya). Indonesia (#6) is the clear #2. Note: <code>users.language</code> is a hardcoded "en", so geography must drive localization.</div></div>
   </section>
 
   <!-- PRODUCT -->
@@ -153,6 +161,12 @@
         <div class="note">76.8% on-time, 20.8% late, only 2.2% missed — the core loop genuinely changes behavior.</div></div>
       <div class="card pad"><h2>Play Reviews <span class="tag">Google Play · ~94K · 0 replied</span></h2><div class="chart sm" id="c-reviews"></div>
         <div class="note"><b style="color:var(--red)">0 of ~94K replied.</b> The biggest cheap reputation win — see the Stores tab.</div></div>
+    </div>
+    <div class="cols even">
+      <div class="card pad"><h2>Per-Prayer Quality <span class="tag">on-time % · last 30 days</span></h2><div class="chart sm" id="c-prayer"></div>
+        <div class="note"><b>Fajr is weakest</b> (71.6% on-time, 3.5% missed); quality climbs through the day to Maghrib (82.6%). Fixing the pre-dawn Fajr flow is the clearest retention win.</div></div>
+      <div class="card pad"><h2>Habit Strength <span class="tag">current streak distribution</span></h2><div class="chart sm" id="c-streaks"></div>
+        <div class="note">55% sit at 0; only <b>19.6%</b> hold a 7+ day streak, 7.4% reach 30+. Streak re-ignition (grace periods, nudges) is the highest-leverage retention lever.</div></div>
     </div>
   </section>
 
@@ -203,6 +217,8 @@
         </ul>
         <div class="note">Full PR-ready spec in <code>fiveprayer-dashboard/substrate/MOBILE_SUBSTRATE.md</code>.</div></div>
     </div>
+    <div class="card pad" style="margin-top:14px"><h2>Reliability — Crash &amp; ANR Rate <span class="tag">Android Vitals · Play Reporting API · live</span></h2><div class="chart sm" id="c-vitals"></div>
+      <div class="note">Crash rate ~<b>0.33%</b> (healthy, under Google's 1.09% threshold). <b style="color:var(--amber)">ANR ~0.52% — above Google's 0.47% threshold</b> ⚠️ — ANRs hurt UX + Play ranking; worth the app team's attention.</div></div>
   </section>
 
   <footer id="foot">Live-updating dashboard — reads <code>data.json</code>, refreshed on a schedule from Supabase + GitHub + the App/Play stores. Aggregate numbers only, no personal data.</footer>
@@ -306,6 +322,14 @@ fetch('data.json?'+Date.now()).then(function(r){return r.json();}).then(function
     document.getElementById('ios-reviews').innerHTML=rv(S.ios.recent,true);
     document.getElementById('play-reviews').innerHTML=rv(S.play.recent,false);
   }
+  if(D.retention&&D.retention.length){var cw=D.retention.map(function(r){return r.cohortWeek.slice(5);});
+    lineArea('c-retention',cw,[{name:'D1',color:TEAL,data:D.retention.map(function(r){return r.d1;})},{name:'D7',color:BLUE,data:D.retention.map(function(r){return r.d7;})},{name:'D30',color:SLATE,data:D.retention.map(function(r){return r.d30;})}]);}
+  if(D.stickiness&&D.stickiness.series){lineArea('c-stickiness',D.stickiness.series.map(function(r){return r[0].slice(5);}),[{name:'DAU/MAU',color:TEAL,data:D.stickiness.series.map(function(r){return r[1];})}]);}
+  if(D.geo&&D.geo.countries_pct){var gg=D.geo.countries_pct.slice(0,12);bar('c-geo',gg.map(function(r){return r[0];}),gg.map(function(r){return r[1];}),null,true);}
+  if(D.engagement&&D.engagement.byPrayer){var bp=D.engagement.byPrayer;bar('c-prayer',bp.map(function(r){return r[0];}),bp.map(function(r){return r[2];}),bp.map(function(r){return r[0]=='fajr'?AMBER:TEAL;}));}
+  if(D.streaks&&D.streaks.buckets){bar('c-streaks',D.streaks.buckets.map(function(b){return b.label;}),D.streaks.buckets.map(function(b){return b.users;}),D.streaks.buckets.map(function(b){return b.label=='0'?SLATE:TEAL;}));}
+  if(D.vitals&&D.vitals.crash){var vd=D.vitals.crash.map(function(r){return r[0].slice(5);});
+    lineArea('c-vitals',vd,[{name:'Crash %',color:TEAL,data:D.vitals.crash.map(function(r){return +(r[1]*100).toFixed(3);})},{name:'ANR %',color:AMBER,data:(D.vitals.anr||[]).map(function(r){return +(r[1]*100).toFixed(3);})}]);}
   setTimeout(function(){charts.forEach(function(c){c.resize();});},80);
 }).catch(function(e){document.getElementById('sub').textContent='Failed to load data.json — '+e;});
 </script>
