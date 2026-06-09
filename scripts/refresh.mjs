@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import crypto from 'crypto';
 
 const prev = JSON.parse(readFileSync('data.json', 'utf8')); // preserve sections we can't refresh
+const MQ = existsSync('scripts/metric_queries.json') ? JSON.parse(readFileSync('scripts/metric_queries.json', 'utf8')) : {};
 const db = new pg.Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
 await db.connect();
 const q = async (sql) => (await db.query(sql)).rows;
@@ -41,11 +42,21 @@ const cohort = await q(`WITH a AS (SELECT DISTINCT user_id FROM prayer_logs)
   round(100.0*count(x.user_id)/nullif(count(*),0),1) pct
   FROM users u LEFT JOIN a x ON x.user_id=u.id WHERE u.created_at >= '2026-02-01' GROUP BY 1,2 ORDER BY 2`);
 
+// ---- high-leverage metrics (each independent; failure preserves the previous value) ----
+const M = {};
+try { const r = await q(MQ.retention); M.retention = r.map(function (x) { return { cohortWeek: String(x.cohort_week), size: +x.size, d1: x.d1 == null ? null : +x.d1, d7: x.d7 == null ? null : +x.d7, d30: x.d30 == null ? null : +x.d30 }; }); } catch (e) { console.log('m.retention', e.message); }
+try { const r = await q(MQ.geo); M.geo = { countries: r.map(function (x) { return [x.country, +x.cnt]; }), countries_pct: r.map(function (x) { return [x.country, +x.pct]; }), languages: [] }; } catch (e) { console.log('m.geo', e.message); }
+try { const r = (await q(MQ.streaks))[0]; M.streaks = { buckets: [{ label: '0', users: +r.bucket_0 }, { label: '1-2', users: +r.bucket_1_2 }, { label: '3-6', users: +r.bucket_3_6 }, { label: '7-13', users: +r.bucket_7_13 }, { label: '14-29', users: +r.bucket_14_29 }, { label: '30-59', users: +r.bucket_30_59 }, { label: '60+', users: +r.bucket_60_plus }], total_users: +r.total_users, streak_ge7: { users: +r.streak_ge7, pct: +r.pct_ge7 }, streak_ge30: { users: +r.streak_ge30, pct: +r.pct_ge30 }, max_longest_streak: +r.max_longest_streak }; } catch (e) { console.log('m.streaks', e.message); }
+try { const a = (await q(MQ.stickDauMau))[0]; const s = await q(MQ.stickSeries); M.stickiness = { dauMau: +a.dau_mau, dau: +a.dau, mau: +a.mau, series: s.map(function (x) { return [String(x.week_end), x.mau ? +(x.dau / x.mau).toFixed(3) : null]; }) }; } catch (e) { console.log('m.stick', e.message); }
+try { const r = await q(MQ.engagement); M.engagement = { byPrayer: r.map(function (x) { return [x.prayer_name, +x.total, +x.on_time_pct, +x.late_pct, +x.missed_pct]; }) }; } catch (e) { console.log('m.eng', e.message); }
+console.log('metrics:', Object.keys(M).join(','));
+
 await db.end();
 
 const OUTLABEL = { on_time: 'On time', late: 'Late', missed: 'Missed', menstruation: 'Menstruation' };
 const data = {
   ...prev,
+  ...M,
   generatedAt: new Date().toISOString(),
   kpis: {
     appOpens: +totals.app_opens, accounts: +totals.accounts, activationPct: +(100 * totals.prayed / totals.app_opens).toFixed(1),
@@ -116,6 +127,31 @@ try {
   if (stores.ios || stores.play) data.stores = { ...prev.stores, ...stores, pulledAt: new Date().toISOString() };
   console.log('stores:', stores.ios?.rating, '/', stores.play?.ratingLast7d);
 } catch (e) { console.log('stores ERROR (kept previous):', e.message); }
+
+// ---- Android Vitals (crash + ANR) via Play Reporting API ----
+try {
+  const b64u = (s) => Buffer.from(s).toString('base64url');
+  const saRaw = process.env.PLAY_SA_JSON || (existsSync('.secrets/play-service-account.json') ? readFileSync('.secrets/play-service-account.json', 'utf8') : null);
+  if (saRaw) {
+    const sa = JSON.parse(saRaw); const now = Math.floor(Date.now() / 1000);
+    const h = b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+    const pl = b64u(JSON.stringify({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/playdeveloperreporting', aud: sa.token_uri, iat: now, exp: now + 3600 }));
+    const assertion = h + '.' + pl + '.' + crypto.sign('RSA-SHA256', Buffer.from(h + '.' + pl), sa.private_key).toString('base64url');
+    const tok = (await (await fetch(sa.token_uri, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }) })).json()).access_token;
+    const end = new Date(Date.now() - 2 * 86400000), start = new Date(end.getTime() - 27 * 86400000);
+    const dt = (d) => ({ year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() });
+    async function vq(ms, metric) {
+      const body = { timelineSpec: { aggregationPeriod: 'DAILY', startTime: dt(start), endTime: dt(end) }, metrics: [metric], dimensions: [] };
+      const r = await fetch('https://playdeveloperreporting.googleapis.com/v1beta1/apps/com.fiveprayer.app/' + ms + ':query', { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.status !== 200) return [];
+      const j = await r.json();
+      return (j.rows || []).map(function (row) { const d = row.startTime; const date = d.year + '-' + String(d.month).padStart(2, '0') + '-' + String(d.day).padStart(2, '0'); const m = (row.metrics || []).find(function (x) { return x.metric === metric; }); const v = m && (m.decimalValue ? m.decimalValue.value : m.value); return [date, v != null ? +(+v).toFixed(4) : null]; });
+    }
+    const crash = await vq('crashRateMetricSet', 'crashRate'), anr = await vq('anrRateMetricSet', 'anrRate');
+    if (crash.length || anr.length) data.vitals = { crash, anr, pulledAt: new Date().toISOString() };
+    console.log('vitals:', crash.length, '/', anr.length);
+  }
+} catch (e) { console.log('vitals ERROR (kept previous):', e.message); }
 
 writeFileSync('data.json', JSON.stringify(data));
 console.log('refreshed data.json — DAU days', data.dau.length, 'signup days', data.signups.length, 'app opens', data.kpis.appOpens);
