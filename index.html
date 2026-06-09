@@ -287,6 +287,11 @@ fetch('data.json?'+Date.now()).then(function(r){return r.json();}).then(function
   bar('c-reach',D.reachout.map(function(r){return r[0];}),D.reachout.map(function(r){return r[1];}),[BLUE,AMBER,TEAL,TEAL],true);
   bar('c-repos',D.github.perRepo.map(function(r){return r[0];}),D.github.perRepo.map(function(r){return r[1];}),null,true);
   calendar('c-ghcal',D.github.daily); calendar('c-reachhm',{});
+  if(D.activityLogUrl){fetch(D.activityLogUrl).then(function(r){return r.json();}).then(function(j){
+    calendar('c-reachhm', j.byDay||{});
+    var ov=document.querySelector('#marketing .pending .ov'); if(ov)ov.style.display='none';
+    charts.forEach(function(c){c.resize();});
+  }).catch(function(){});}
 
   if(D.stores){var S=D.stores;
     var esc=function(s){return String(s||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});};
