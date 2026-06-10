@@ -9,7 +9,21 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import crypto from 'crypto';
 
-const prev = JSON.parse(readFileSync('data.json', 'utf8'));
+const DATA_KEY_B64 = process.env.DASHBOARD_DATA_KEY || (existsSync('.secrets/dashboard_data_key') ? readFileSync('.secrets/dashboard_data_key', 'utf8').trim() : null);
+const wc = crypto.webcrypto;
+async function aesKey(usages) { return wc.subtle.importKey('raw', Buffer.from(DATA_KEY_B64, 'base64'), 'AES-GCM', false, usages); }
+async function loadPrev() {
+  if (DATA_KEY_B64 && existsSync('data.enc.json')) {
+    try {
+      const e = JSON.parse(readFileSync('data.enc.json', 'utf8'));
+      const pt = await wc.subtle.decrypt({ name: 'AES-GCM', iv: Buffer.from(e.iv, 'base64') }, await aesKey(['decrypt']), Buffer.from(e.ct, 'base64'));
+      return JSON.parse(Buffer.from(pt).toString('utf8'));
+    } catch (err) { console.log('prev decrypt failed, starting fresh:', err.message); }
+  }
+  if (existsSync('data.json')) return JSON.parse(readFileSync('data.json', 'utf8'));
+  return {};
+}
+const prev = await loadPrev();
 const MQ = existsSync('scripts/metric_queries.json') ? JSON.parse(readFileSync('scripts/metric_queries.json', 'utf8')) : {};
 const b64url = (s) => Buffer.from(s).toString('base64url');
 const SHEET_ID = '1Nl20d89gqiNpca4zzp1T13l4oqtB07rmzVUQ8mQSdeI';
@@ -159,5 +173,14 @@ try {
   }
 } catch (e) { console.log('vitals skipped:', e.message); }
 
-writeFileSync('data.json', JSON.stringify(data));
+const outStr = JSON.stringify(data);
+if (DATA_KEY_B64) {
+  const iv = wc.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await wc.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(['encrypt']), new TextEncoder().encode(outStr)));
+  writeFileSync('data.enc.json', JSON.stringify({ iv: Buffer.from(iv).toString('base64'), ct: Buffer.from(ct).toString('base64') }));
+  console.log('wrote data.enc.json (encrypted,', ct.length, 'bytes)');
+} else {
+  writeFileSync('data.json', outStr);
+  console.log('no DASHBOARD_DATA_KEY — wrote plaintext data.json (dev only)');
+}
 console.log('done — reachout days', Object.keys((data.reachoutHistory && data.reachoutHistory.byDay) || {}).length, '· dau days', (data.dau || []).length);
